@@ -3,8 +3,8 @@
 <![endif]-->
 <link rel="stylesheet" href="/css/iconfont.css">
 
-<link rel="stylesheet" href="/css/index.css?v=202101252249.css">
-<link rel="stylesheet" href="/css/info.css?v=202101252249.css">
+<link rel="stylesheet" href="/css/index.css?v=202101261019.css">
+<link rel="stylesheet" href="/css/info.css?v=202101261019.css">
 <link href="https://cdn.bootcss.com/highlight.js/9.15.9/styles/github.min.css" rel="stylesheet"><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="Blog" type="application/atom+xml">
 </head><body><header id="header" class="header-navigation"><nav><div class="logo"><a href="http://example.com">Blog</a></div><h2 id="mnavh"><span class="navicon"></span></h2><ul id="starlist"><li><a href="/">首页</a></li><li><a href="/time.html">时间轴</a></li></ul><div class="searchbox"><div id="search_bar" class="search_bar"><input id="keyboard" placeholder="想搜点什么呢.." type="text" name="keyboard" autocomplete="off" class="input"><p class="search_ico"><span></span></p></div></div></nav></header><article><main><div class="con_warp"><div class="infosbox"><div class="newsview"><h3 class="news_title">Hexo 群辉搭建采坑记</h3><div class="bloginfo"><ul><li class="author">作者：<a href="/">bawanag</a></li><li class="lmname"><a href="/"></a></li><li class="timer">时间：2020-01-20 15:36:00</li><li class="view"><span id="busuanzi_value_page_pv">99</span><span>次访问</span></li></ul></div><div class="tags"></div><div class="news_con"><h1 id="Hexo-群辉docker搭建以及上传GitHub-io-采坑记"><a href="#Hexo-群辉docker搭建以及上传GitHub-io-采坑记" class="headerlink" title="Hexo 群辉docker搭建以及上传GitHub io 采坑记"></a><strong>Hexo 群辉docker搭建以及上传GitHub io 采坑记</strong></h1><h2 id="Hexo-以及-Hexo-admin-搭建采坑"><a href="#Hexo-以及-Hexo-admin-搭建采坑" class="headerlink" title="Hexo 以及 Hexo admin 搭建采坑"></a>Hexo 以及 Hexo admin 搭建采坑</h2><p>部分教程引用<a target="_blank" rel="noopener" href="https://drunkfish.me/hexo/">https://drunkfish.me/hexo/</a></p>
 <p>群辉可以直接使用spurin/hexo docker镜像</p>
@@ -29,6 +29,7 @@
 
 
 
+<p>关于重新导入ssh秘钥，貌似不成功，但是hexo是基于linux ssh架构的机器，理论上ssh可以正常导入则git可以直接使用ssh秘钥。</p>
 <h2 id="编辑Markdown博客网页"><a href="#编辑Markdown博客网页" class="headerlink" title="编辑Markdown博客网页"></a>编辑Markdown博客网页</h2><p>根据我采坑的经验，编辑md文件基本上分为3大类型：</p>
 <ol>
 <li>管理网页在线编辑</li>
@@ -39,7 +40,7 @@
 <p>但是这一切的方法都无法避开的问题就是插入图片的问题，1~3的方案都行需要而外上传图片之后进行图片的关联，图片关联需要图片的绝对路径或者相对路径。</p>
 <p>但是使用这个方案进行md 编辑会极大影响博客编写效率。</p>
 <p>使用vscode需要分别安装vscode+markdown插件，图片粘贴插件以及实时查看md效果插件，会使得本来装满插件的vscode变得更加臃肿，而且这个方案最大的弊端是需要本地安装hexo，对于服务器在群辉上的用户来说太过臃肿。</p>
-<p>我这边选择了typora工具进行编辑，该工具体积小巧，点开即用，可以根据<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1600295">https://cloud.tencent.com/developer/article/1600295</a> 进行图片实时上传和在线浏览，直接打开smb关联的群辉位置即可编辑，简单好用, 但是注意在该教程最后需要安装hexo-image-link 插件才可以在博客上正确显示图片</p>
+<p>我这边选择了typora工具进行编辑，该工具体积小巧，点开即用，可以根据<a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1600295">https://cloud.tencent.com/developer/article/1600295</a> 进行图片实时上传和在线浏览，直接打开smb关联的群辉位置即可编辑，简单好用, 但是注意在该教程最后需要安装<strong>hexo-image-link</strong> 插件才可以在博客上正确显示图片</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>根据几个小时的采坑，Hexo的博客服务器已经成功运行起来了，最后给出整体方案。</p>
 <ol>
 <li>为了方便备份，方便单独部署以及数据隔离，使用docker+群辉的方式进行Hexo的安装</li>
@@ -70,6 +71,6 @@ gitalk.render('comment_container')</script></div></div></div></main><aside class
 <script src="/js/scrollreveal.js"></script>
 <script src="/js/hc-sticky.js"></script>
 <script src="/js/canvas-nest.js" type="text/javascript" color="47,135,193" opacity="0.7" zIndex="-2" count="199"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/highlight.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/java.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/javascript.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<script src="/js/common.js?v=202101252249.js"></script>
-<script src="/js/index.js?v=202101252249.js"></script>
+<script src="/js/common.js?v=202101261019.js"></script>
+<script src="/js/index.js?v=202101261019.js"></script>
 </body></html>
