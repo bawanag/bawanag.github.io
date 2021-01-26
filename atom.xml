@@ -6,7 +6,7 @@
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2021-01-26T09:58:25.715Z</updated>
+  <updated>2021-01-26T13:19:34.000Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -17,11 +17,11 @@
   <generator uri="https://hexo.io/">Hexo</generator>
   
   <entry>
-    <title>Comparison of Different Deep Learning Technologies</title>
+    <title>Comparison of Different Deep Learning technologies toward Choosing Appropriate Convolution Neural Network architecture</title>
     <link href="http://example.com/2020/12/20/Comparison-of-Different-Deep-Learning-Technologies/"/>
     <id>http://example.com/2020/12/20/Comparison-of-Different-Deep-Learning-Technologies/</id>
     <published>2020-12-20T18:41:20.000Z</published>
-    <updated>2021-01-26T09:58:25.715Z</updated>
+    <updated>2021-01-26T13:19:34.000Z</updated>
     
     <content type="html"><![CDATA[<embed src="./Comparison-of-Different-Deep-Learning-Technologies.pdf" width="100%" height="1000" type="application/pdf">]]></content>
     
