@@ -13,7 +13,8 @@ body {
 
 img {
   border: 0;
-  display: block; }
+  display: block;
+  align: middle; }
 
 ul, li {
   list-style: none; }
