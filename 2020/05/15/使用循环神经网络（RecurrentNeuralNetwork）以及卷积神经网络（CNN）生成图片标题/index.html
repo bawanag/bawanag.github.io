@@ -3,9 +3,11 @@
 <![endif]-->
 <link rel="stylesheet" href="/css/iconfont.css">
 
-<link rel="stylesheet" href="/css/index.css?v=202102011642.css">
-<link rel="stylesheet" href="/css/info.css?v=202102011642.css">
-<link href="https://cdn.bootcss.com/highlight.js/9.15.9/styles/github.min.css" rel="stylesheet"><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="Bawanag Blog" type="application/atom+xml">
+<link rel="stylesheet" href="/css/index.css?v=202102021127.css">
+<link rel="stylesheet" href="/css/info.css?v=202102021127.css">
+<link href="https://cdn.bootcss.com/highlight.js/9.15.9/styles/github.min.css" rel="stylesheet"><!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="Bawanag Blog" type="application/atom+xml">
 </head><body><header id="header" class="header-navigation"><nav><div class="logo"><a href="https://bawanag.github.io">Bawanag Blog</a></div><h2 id="mnavh"><span class="navicon"></span></h2><ul id="starlist"><li><a href="/">首页</a></li><li><a href="/time.html">时间轴</a></li></ul><div class="searchbox"><div id="search_bar" class="search_bar"><input id="keyboard" placeholder="想搜点什么呢.." type="text" name="keyboard" autocomplete="off" class="input"><p class="search_ico"><span></span></p></div></div></nav></header><article><main><div class="con_warp"><div class="infosbox"><div class="newsview"><h3 class="news_title">使用循环神经网络（RecurrentNeuralNetwork）以及卷积神经网络（CNN）生成图片标题</h3><div class="bloginfo"><ul><li class="author">作者：<a href="/">Yuanjian Tao</a></li><li class="lmname"><a href="/">Tutorial</a></li><li class="timer">时间：2020-05-15 10:57:00</li><li class="view"><span id="busuanzi_value_page_pv">99</span><span>次访问</span></li></ul></div><div class="tags"><a href="/tags/Deep-Learning/" target="_blank">Deep Learning</a><a href="/tags/Artificial-Intelligence/" target="_blank">Artificial Intelligence</a><a href="/tags/RNN/" target="_blank">RNN</a></div><div class="news_con"><p>项目和demo地址：<a target="_blank" rel="noopener" href="https://github.com/bawanag/Pytorch_Image_caption_generater.git">https://github.com/bawanag/Pytorch_Image_caption_generater.git</a></p>
 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>作为机械学习的重要领域，CNNs作为图像识别的重要工具，目前的技术已经较为成熟，根据2021年1月29日的ImageNet1000排名分类数据显示<a href="#refer-anchor-1"><sup>1</sup></a> ，排名最高的模型Meta Pseudo Labels<a href="#refer-anchor-2"><sup>2</sup></a>得到了高达90.2%的Top1精准度以及98.8%的Top5精准度，当然，其需要训练的参数量也高达480M.。 大参数量的模型在效率上基于目前的硬件算力肯定难以满足效率上的需要。即便如此，可以在大部分手机流畅运行的MobileNetV2模型也拥有高达90%的Top5效率<a href="#refer-anchor-3"><sup>3</sup></a>。因此，对识别成功物体类型方面CNN有极高的性能以及极低的运算代价。因此，CNN的技术进步为后续人工智能的应用发展奠定了坚实的基础。</p>
 <img src="/2020/05/15/%E4%BD%BF%E7%94%A8%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88RecurrentNeuralNetwork%EF%BC%89%E4%BB%A5%E5%8F%8A%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88CNN%EF%BC%89%E7%94%9F%E6%88%90%E5%9B%BE%E7%89%87%E6%A0%87%E9%A2%98/Top5_Accuracy-1611915715089.png" class="" title="Top5_Accuracy">
@@ -473,6 +475,6 @@ gitalk.render('comment_container')</script></div></div></div></main><aside class
 <script src="/js/scrollreveal.js"></script>
 <script src="/js/hc-sticky.js"></script>
 <script src="/js/canvas-nest.js" type="text/javascript" color="47,135,193" opacity="0.7" zIndex="-2" count="199"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/highlight.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/java.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/javascript.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<script src="/js/common.js?v=202102011642.js"></script>
-<script src="/js/index.js?v=202102011642.js"></script>
+<script src="/js/common.js?v=202102021127.js"></script>
+<script src="/js/index.js?v=202102021127.js"></script>
 </body></html>
