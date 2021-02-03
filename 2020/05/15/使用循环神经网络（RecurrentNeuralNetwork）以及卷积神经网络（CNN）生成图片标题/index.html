@@ -1,0 +1,480 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>使用循环神经网络（RecurrentNeuralNetwork）以及卷积神经网络（CNN）生成图片标题</title><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><meta http-equiv="X-UA-Compatible" content="IE=Edge，chrome=1"><meta name="description" content=""><meta name="keywords"><meta name="author" content="Yuanjian Tao"><link rel="short icon" href="/images/favicon.png"><link rel="icon" href="/images/favicon.png"><!--[if lt IE 9]>
+<script src="/js/modernizr.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/css/iconfont.css">
+
+<link rel="stylesheet" href="/css/index.css?v=202102031720.css">
+<link rel="stylesheet" href="/css/info.css?v=202102031720.css">
+<link href="https://cdn.bootcss.com/highlight.js/9.15.9/styles/github.min.css" rel="stylesheet"><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="Bawanag Blog" type="application/atom+xml">
+</head><body><header id="header" class="header-navigation"><nav><div class="logo"><a href="https://bawanag.github.io">Bawanag Blog</a></div><h2 id="mnavh"><span class="navicon"></span></h2><ul id="starlist"><li><a href="/">首页</a></li><li><a href="/time.html">时间轴</a></li></ul><div class="searchbox"><div id="search_bar" class="search_bar"><input id="keyboard" placeholder="想搜点什么呢.." type="text" name="keyboard" autocomplete="off" class="input"><p class="search_ico"><span></span></p></div></div></nav></header><article><main><div class="con_warp"><div class="infosbox"><div class="newsview"><h3 class="news_title">使用循环神经网络（RecurrentNeuralNetwork）以及卷积神经网络（CNN）生成图片标题</h3><div class="bloginfo"><ul><li class="author">作者：<a href="/">Yuanjian Tao</a></li><li class="lmname"><a href="/">Tutorial</a></li><li class="timer">时间：2020-05-15 10:57:00</li><li class="view"><span id="busuanzi_value_page_pv">99</span><span>次访问</span></li></ul></div><div class="tags"><a href="/tags/Deep-Learning/" target="_blank">Deep Learning</a><a href="/tags/Artificial-Intelligence/" target="_blank">Artificial Intelligence</a><a href="/tags/RNN/" target="_blank">RNN</a></div><div class="news_con"><p>项目和demo地址：<a target="_blank" rel="noopener" href="https://github.com/bawanag/Pytorch_Image_caption_generater.git">https://github.com/bawanag/Pytorch_Image_caption_generater.git</a></p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>作为机械学习的重要领域，CNNs作为图像识别的重要工具，目前的技术已经较为成熟，根据2021年1月29日的ImageNet1000排名分类数据显示<a href="#refer-anchor-1"><sup>1</sup></a> ，排名最高的模型Meta Pseudo Labels<a href="#refer-anchor-2"><sup>2</sup></a>得到了高达90.2%的Top1精准度以及98.8%的Top5精准度，当然，其需要训练的参数量也高达480M.。 大参数量的模型在效率上基于目前的硬件算力肯定难以满足效率上的需要。即便如此，可以在大部分手机流畅运行的MobileNetV2模型也拥有高达90%的Top5效率<a href="#refer-anchor-3"><sup>3</sup></a>。因此，对识别成功物体类型方面CNN有极高的性能以及极低的运算代价。因此，CNN的技术进步为后续人工智能的应用发展奠定了坚实的基础。</p>
+<img src="/2020/05/15/%E4%BD%BF%E7%94%A8%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88RecurrentNeuralNetwork%EF%BC%89%E4%BB%A5%E5%8F%8A%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88CNN%EF%BC%89%E7%94%9F%E6%88%90%E5%9B%BE%E7%89%87%E6%A0%87%E9%A2%98/Top5_Accuracy-1611915715089.png" class="" title="Top5_Accuracy">
+
+<p>RNN的出现对语言生成，识别以及翻译等领域有着非常多的应用，通过网络的互相连接以及之前网络结果对之后网络结果的相互影响，RNN有一定的记忆能力，这赋予了RNN可以生成通顺的文本以及造句。但因为网络联结复杂导致的梯度爆炸导致反向传播（Back Propagation）代价高昂。但此并不影响RNN成为强大的语言架构。</p>
+<p>RNN架构发展至今有许多不同的变化，Elman Network代表的单向RNN<a href="#refer-anchor-4"><sup>4</sup></a>结构以及目前比较常用的LSTM（Long Short-Term Memory）<a href="#refer-anchor-5"><sup>5</sup></a>结构。得益于<strong>Pytorch</strong>的优秀的代码结构用户可以很好的替换不同的RNN架构。</p>
+<h2 id="Object"><a href="#Object" class="headerlink" title="Object"></a>Object</h2><p>生成CNNs编码器（encoder）以及RNN解码器（decoder）模型，将其配合使用共同生成指定图片标题，效果如下图所示：</p>
+<img src="/2020/05/15/%E4%BD%BF%E7%94%A8%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88RecurrentNeuralNetwork%EF%BC%89%E4%BB%A5%E5%8F%8A%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88CNN%EF%BC%89%E7%94%9F%E6%88%90%E5%9B%BE%E7%89%87%E6%A0%87%E9%A2%98/image-20210129161140690.png" class="" title="image-20210129161140690">
+
+
+
+<h2 id="数据准备"><a href="#数据准备" class="headerlink" title="数据准备"></a>数据准备</h2><h3 id="i-下载Dataset"><a href="#i-下载Dataset" class="headerlink" title="i). 下载Dataset"></a>i). 下载Dataset</h3><p>Dataset选择使用<a target="_blank" rel="noopener" href="https://github.com/goodwillyoga/Flickr8k_dataset">Flickr8k</a>作为训练集。下载训练集以及标题到dataset目录下后，定义目录位置：</p>
+<img src="/2020/05/15/%E4%BD%BF%E7%94%A8%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88RecurrentNeuralNetwork%EF%BC%89%E4%BB%A5%E5%8F%8A%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88CNN%EF%BC%89%E7%94%9F%E6%88%90%E5%9B%BE%E7%89%87%E6%A0%87%E9%A2%98/image-20210129212342170.png" class="" title="image-20210129212342170">
+
+<p>Dataset准备好之后，我们可以开始整理数据。</p>
+<h3 id="ii-字典生成以及保存"><a href="#ii-字典生成以及保存" class="headerlink" title="ii). 字典生成以及保存"></a>ii). 字典生成以及保存</h3><p>第一步我们先导入必要的库：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> torchvision <span class="token keyword">import</span> transforms
+<span class="token keyword">import</span> torch
+<span class="token keyword">import</span> torch<span class="token punctuation">.</span>nn <span class="token keyword">as</span> nn
+<span class="token keyword">import</span> torchvision<span class="token punctuation">.</span>models <span class="token keyword">as</span> models
+<span class="token keyword">from</span> torch<span class="token punctuation">.</span>nn<span class="token punctuation">.</span>utils<span class="token punctuation">.</span>rnn <span class="token keyword">import</span> pack_padded_sequence
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">from</span> torch<span class="token punctuation">.</span>utils<span class="token punctuation">.</span>data <span class="token keyword">import</span> Dataset
+<span class="token keyword">from</span> google<span class="token punctuation">.</span>colab <span class="token keyword">import</span> drive
+<span class="token keyword">from</span> nltk<span class="token punctuation">.</span>translate<span class="token punctuation">.</span>bleu_score <span class="token keyword">import</span> sentence_bleu
+<span class="token keyword">import</span> matplotlib<span class="token punctuation">.</span>pyplot <span class="token keyword">as</span> plt
+<span class="token keyword">import</span> random
+<span class="token keyword">import</span> datetime<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<p>生成字典我们需要先进行单词统计，第一步将Flickr8k.token.txt的文件按行读取出来，将标题以及图片文件名分割得到所有图片标题集合：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">read_lines</span><span class="token punctuation">(</span>filepath<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">""" Open the ground truth captions into memory, line by line. """</span>
+    <span class="token builtin">file</span> <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span>filepath<span class="token punctuation">,</span> <span class="token string">'r'</span><span class="token punctuation">)</span>
+    lines <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+    <span class="token keyword">while</span> <span class="token boolean">True</span><span class="token punctuation">:</span> 
+        <span class="token comment"># Get next line from file until there's no more</span>
+        line <span class="token operator">=</span> <span class="token builtin">file</span><span class="token punctuation">.</span>readline<span class="token punctuation">(</span><span class="token punctuation">)</span> 
+        <span class="token keyword">if</span> <span class="token keyword">not</span> line<span class="token punctuation">:</span> 
+            <span class="token keyword">break</span>
+        lines<span class="token punctuation">.</span>append<span class="token punctuation">(</span>line<span class="token punctuation">.</span>strip<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token builtin">file</span><span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span> 
+    <span class="token keyword">return</span> lines
+lines <span class="token operator">=</span> read_lines<span class="token punctuation">(</span>caption_dir <span class="token operator">+</span> token_file<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>之后需要对单词进行编号，统计频率，生成字典，所以这里需要创建一个Vocabulary类进行单词的录入，删除，单词编号互转等功能：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Vocabulary</span><span class="token punctuation">(</span><span class="token builtin">object</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Simple vocabulary wrapper which maps every unique word to an integer ID. """</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token comment"># Intially, set both the IDs and words to empty dictionaries.</span>
+        self<span class="token punctuation">.</span>word2idx <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+        self<span class="token punctuation">.</span>idx2word <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+        self<span class="token punctuation">.</span>idx <span class="token operator">=</span> <span class="token number">0</span>
+
+    <span class="token keyword">def</span> <span class="token function">add_word</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> word<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token comment"># If the word does not already exist in the dictionary, add it</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> word <span class="token keyword">in</span> self<span class="token punctuation">.</span>word2idx<span class="token punctuation">:</span><span class="token comment">#如果没有该单词则不录入</span>
+            self<span class="token punctuation">.</span>word2idx<span class="token punctuation">[</span>word<span class="token punctuation">]</span> <span class="token operator">=</span> self<span class="token punctuation">.</span>idx
+            self<span class="token punctuation">.</span>idx2word<span class="token punctuation">[</span>self<span class="token punctuation">.</span>idx<span class="token punctuation">]</span> <span class="token operator">=</span> word
+            <span class="token comment"># Increment the ID for the next word</span>
+            self<span class="token punctuation">.</span>idx <span class="token operator">+=</span> <span class="token number">1</span>
+    <span class="token keyword">def</span> <span class="token function">delete_word</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> word<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> word <span class="token keyword">in</span> self<span class="token punctuation">.</span>word2idx<span class="token punctuation">:</span>
+            current_idx <span class="token operator">=</span> self<span class="token punctuation">.</span>word2idx<span class="token punctuation">[</span>word<span class="token punctuation">]</span>
+            self<span class="token punctuation">.</span>word2idx<span class="token punctuation">.</span>pop<span class="token punctuation">(</span>word<span class="token punctuation">)</span>
+            self<span class="token punctuation">.</span>idx2word<span class="token punctuation">.</span>pop<span class="token punctuation">(</span>current_idx<span class="token punctuation">)</span>
+            <span class="token comment"># Increment the ID for the next word</span>
+    <span class="token keyword">def</span> <span class="token function">translate_idx</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> idx<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>idx2word<span class="token punctuation">[</span>idx<span class="token punctuation">]</span> <span class="token comment"># transfer the index to real word </span>
+    <span class="token keyword">def</span> <span class="token function">__call__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> word<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token comment"># If we try to access a word in the dictionary which does not exist, return the &lt;unk> id</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> word <span class="token keyword">in</span> self<span class="token punctuation">.</span>word2idx<span class="token punctuation">:</span>
+            <span class="token keyword">return</span> self<span class="token punctuation">.</span>word2idx<span class="token punctuation">[</span><span class="token string">'&lt;unk>'</span><span class="token punctuation">]</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>word2idx<span class="token punctuation">[</span>word<span class="token punctuation">]</span>
+
+    <span class="token keyword">def</span> <span class="token function">__len__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token builtin">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>word2idx<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>之后进行单词字典制作，为了统计单词出现的频率我们需要创建一个数组word_counter，因为不知道单词字典一共有多少的单词量所以我们随便给这个数组赋一个较大的容量保证统计单词频率的时候不会出现数组越界：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">vocabtemp <span class="token operator">=</span> Vocabulary<span class="token punctuation">(</span><span class="token punctuation">)</span>
+word_counter <span class="token operator">=</span> np<span class="token punctuation">.</span>zeros<span class="token punctuation">(</span><span class="token number">8840</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>下一步我们将每个得到的句子去掉标点符号，进行分割单词，依次录入到字典里，因为字典会自动识别相同的单词我们不用关心会不会重复录入，之后我们将单词对应的index取到给word_counter++</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">for</span> mix_sentence <span class="token keyword">in</span> lines<span class="token punctuation">:</span>
+  sentence <span class="token operator">=</span> mix_sentence<span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">'#'</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span>
+  sentence <span class="token operator">=</span> sentence<span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">'\t'</span><span class="token punctuation">)</span>
+  words <span class="token operator">=</span> sentence<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">' '</span><span class="token punctuation">)</span>
+  words<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>words<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token string">"."</span> <span class="token keyword">in</span> words<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    words<span class="token punctuation">.</span>remove<span class="token punctuation">(</span><span class="token string">"."</span><span class="token punctuation">)</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token string">","</span> <span class="token keyword">in</span> words<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    words<span class="token punctuation">.</span>remove<span class="token punctuation">(</span><span class="token string">","</span><span class="token punctuation">)</span>
+  <span class="token keyword">for</span> word <span class="token keyword">in</span> words<span class="token punctuation">:</span>
+    word <span class="token operator">=</span> word<span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    vocabtemp<span class="token punctuation">.</span>add_word<span class="token punctuation">(</span>word<span class="token punctuation">)</span>
+    indx <span class="token operator">=</span> vocabtemp<span class="token punctuation">(</span>word<span class="token punctuation">)</span>
+    word_counter<span class="token punctuation">[</span>indx<span class="token punctuation">]</span> <span class="token operator">+=</span><span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>最后将开始结束符号以及必要的分隔符添加进字典，排除出现频次出现少于3次的单词就完成字典的制作：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">vocab <span class="token operator">=</span> Vocabulary<span class="token punctuation">(</span><span class="token punctuation">)</span>
+vocab<span class="token punctuation">.</span>add_word<span class="token punctuation">(</span><span class="token string">'&lt;pad>'</span><span class="token punctuation">)</span>
+vocab<span class="token punctuation">.</span>add_word<span class="token punctuation">(</span><span class="token string">'&lt;start>'</span><span class="token punctuation">)</span>
+vocab<span class="token punctuation">.</span>add_word<span class="token punctuation">(</span><span class="token string">'&lt;end>'</span><span class="token punctuation">)</span>
+vocab<span class="token punctuation">.</span>add_word<span class="token punctuation">(</span><span class="token string">'&lt;unk>'</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> l <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>vocabtemp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+  <span class="token keyword">if</span> word_counter<span class="token punctuation">[</span>l<span class="token punctuation">]</span><span class="token operator">></span><span class="token number">3</span><span class="token punctuation">:</span>
+    vocab<span class="token punctuation">.</span>add_word<span class="token punctuation">(</span>vocabtemp<span class="token punctuation">.</span>translate_idx<span class="token punctuation">(</span>l<span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这边建议储存一下Vocabulary对象，方便之后调用model的时候转换标题生成结果为可阅读的语句：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> pickle
+f <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span>vocab_file<span class="token punctuation">,</span> <span class="token string">'wb'</span><span class="token punctuation">)</span>
+pickle<span class="token punctuation">.</span>dump<span class="token punctuation">(</span>vocab<span class="token punctuation">,</span> f<span class="token punctuation">)</span>
+f<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<h2 id="Dataset-和-Loader准备"><a href="#Dataset-和-Loader准备" class="headerlink" title="Dataset 和 Loader准备"></a>Dataset 和 Loader准备</h2><p>我们需要再次把标题以及文件名分割，这边需要标题与文件名一一对应，为了代码的可读性我们再次分割一次，提取标题以及标题对应的图片文件名：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">get_meta</span><span class="token punctuation">(</span>lines<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">""" Fetches the meta data for all the images and assigns labels.
+    """</span>
+    image_ids<span class="token punctuation">,</span> cleaned_captions <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> line <span class="token keyword">in</span> lines<span class="token punctuation">:</span>
+      mix_line0 <span class="token operator">=</span> line<span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">'#'</span><span class="token punctuation">)</span>
+      mix_line1 <span class="token operator">=</span> mix_line0<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">'.jpg'</span><span class="token punctuation">)</span>
+      mix_sentence <span class="token operator">=</span> mix_line0<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">'\t'</span><span class="token punctuation">)</span>
+      image_ids<span class="token punctuation">.</span>append<span class="token punctuation">(</span>mix_line1<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+      cleaned_captions<span class="token punctuation">.</span>append<span class="token punctuation">(</span>mix_sentence<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                
+    <span class="token keyword">return</span> image_ids<span class="token punctuation">,</span> cleaned_captions
+image_ids<span class="token punctuation">,</span> cleaned_captions <span class="token operator">=</span> get_meta<span class="token punctuation">(</span>lines<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<p>为了符合规范以及提升可读性，我们将数据打包成DataFrame方便阅读，提取数据以及调用：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+data <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token string">'image_id'</span><span class="token punctuation">:</span> image_ids<span class="token punctuation">,</span>
+    <span class="token string">'path'</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>image_dir <span class="token operator">+</span> image_id <span class="token operator">+</span> <span class="token string">".jpg"</span> <span class="token keyword">for</span> image_id <span class="token keyword">in</span> image_ids<span class="token punctuation">]</span><span class="token punctuation">,</span>
+    <span class="token string">'caption'</span><span class="token punctuation">:</span> cleaned_captions
+<span class="token punctuation">&#125;</span>
+
+data_df <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>data<span class="token punctuation">,</span> columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">'image_id'</span><span class="token punctuation">,</span> <span class="token string">'path'</span><span class="token punctuation">,</span> <span class="token string">'caption'</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<p>编写Dataset处理类，将标题文字转换为wordID，添加开头以及结束标题标识符：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> PIL <span class="token keyword">import</span> Image
+<span class="token keyword">import</span> cv2
+<span class="token keyword">from</span> nltk <span class="token keyword">import</span> tokenize
+<span class="token keyword">class</span> <span class="token class-name">Flickr8k</span><span class="token punctuation">(</span>Dataset<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">""" Flickr8k custom dataset compatible with torch.utils.data.DataLoader. """</span>
+    
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> df<span class="token punctuation">,</span> vocab<span class="token punctuation">,</span> transform<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">""" Set the path for images, captions and vocabulary wrapper.
+        
+        Args:
+            df: df containing image paths and captions.
+            vocab: vocabulary wrapper.
+            transform: image transformer.
+        """</span>
+        self<span class="token punctuation">.</span>df <span class="token operator">=</span> df
+        self<span class="token punctuation">.</span>vocab <span class="token operator">=</span> vocab
+        self<span class="token punctuation">.</span>transform <span class="token operator">=</span> transform
+
+    <span class="token keyword">def</span> <span class="token function">__getitem__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> index<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">""" Returns one data pair (image and caption). """</span>
+
+        vocab <span class="token operator">=</span> self<span class="token punctuation">.</span>vocab
+
+        caption <span class="token operator">=</span> self<span class="token punctuation">.</span>df<span class="token punctuation">[</span><span class="token string">'caption'</span><span class="token punctuation">]</span><span class="token punctuation">[</span>index<span class="token punctuation">]</span><span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        img_id <span class="token operator">=</span> self<span class="token punctuation">.</span>df<span class="token punctuation">[</span><span class="token string">'image_id'</span><span class="token punctuation">]</span><span class="token punctuation">[</span>index<span class="token punctuation">]</span>
+        path <span class="token operator">=</span> self<span class="token punctuation">.</span>df<span class="token punctuation">[</span><span class="token string">'path'</span><span class="token punctuation">]</span><span class="token punctuation">[</span>index<span class="token punctuation">]</span>
+
+        image <span class="token operator">=</span> Image<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span><span class="token builtin">open</span><span class="token punctuation">(</span>path<span class="token punctuation">,</span> <span class="token string">'rb'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>transform <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+            image <span class="token operator">=</span> self<span class="token punctuation">.</span>transform<span class="token punctuation">(</span>image<span class="token punctuation">)</span>
+
+        <span class="token comment"># Convert caption (string) to word ids.</span>
+        tokens <span class="token operator">=</span> caption<span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        caption <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token comment"># Build the Tensor version of the caption, with token words</span>
+        caption<span class="token punctuation">.</span>append<span class="token punctuation">(</span>vocab<span class="token punctuation">(</span><span class="token string">'&lt;start>'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">for</span> token <span class="token keyword">in</span> tokens<span class="token punctuation">:</span>
+          indextemp <span class="token operator">=</span> vocab<span class="token punctuation">(</span>token<span class="token punctuation">)</span>
+          <span class="token keyword">if</span><span class="token punctuation">(</span>indextemp <span class="token operator">!=</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            caption<span class="token punctuation">.</span>extend<span class="token punctuation">(</span><span class="token punctuation">[</span>indextemp<span class="token punctuation">]</span><span class="token punctuation">)</span>
+        caption<span class="token punctuation">.</span>append<span class="token punctuation">(</span>vocab<span class="token punctuation">(</span><span class="token string">'&lt;end>'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        target <span class="token operator">=</span> torch<span class="token punctuation">.</span>Tensor<span class="token punctuation">(</span>caption<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> image<span class="token punctuation">,</span> target
+
+    <span class="token keyword">def</span> <span class="token function">__len__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token builtin">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>df<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<p>编写collate_fn，因为标题和图片是多对一的关系，每个图片可能会对应长短不一的标题，所以这里我们需要设定target标题的padded_length是变化的，Back propagation时才可以保证padded的长度符合标题的长度。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">caption_collate_fn</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token comment"># Sort a data list by caption length from longest to shortest.</span>
+    data<span class="token punctuation">.</span>sort<span class="token punctuation">(</span>key<span class="token operator">=</span><span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token builtin">len</span><span class="token punctuation">(</span>x<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span> reverse<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token comment"># labda is the function to suffle the data</span>
+    images<span class="token punctuation">,</span> captions <span class="token operator">=</span> <span class="token builtin">zip</span><span class="token punctuation">(</span><span class="token operator">*</span>data<span class="token punctuation">)</span>
+
+    <span class="token comment"># Merge images (from tuple of 3D tensor to 4D tensor).</span>
+    images <span class="token operator">=</span> torch<span class="token punctuation">.</span>stack<span class="token punctuation">(</span>images<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Merge captions (from tuple of 1D tensor to 2D tensor).</span>
+    lengths <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token builtin">len</span><span class="token punctuation">(</span>cap<span class="token punctuation">)</span> <span class="token keyword">for</span> cap <span class="token keyword">in</span> captions<span class="token punctuation">]</span><span class="token comment">#因为图片是一对多的关系，我们需要使用不同的标题训练它多次</span>
+    targets <span class="token operator">=</span> torch<span class="token punctuation">.</span>zeros<span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>captions<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token builtin">max</span><span class="token punctuation">(</span>lengths<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token builtin">long</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span> i<span class="token punctuation">,</span> cap <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>captions<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        end <span class="token operator">=</span> lengths<span class="token punctuation">[</span>i<span class="token punctuation">]</span>
+        targets<span class="token punctuation">[</span>i<span class="token punctuation">,</span> <span class="token punctuation">:</span>end<span class="token punctuation">]</span> <span class="token operator">=</span> cap<span class="token punctuation">[</span><span class="token punctuation">:</span>end<span class="token punctuation">]</span>        
+    <span class="token keyword">return</span> images<span class="token punctuation">,</span> targets<span class="token punctuation">,</span> lengths<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>定义图片数据转换，将图片都调整为标准的CNN需求图片：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">data_transform <span class="token operator">=</span> transforms<span class="token punctuation">.</span>Compose<span class="token punctuation">(</span><span class="token punctuation">[</span> 
+    transforms<span class="token punctuation">.</span>Resize<span class="token punctuation">(</span><span class="token number">224</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    transforms<span class="token punctuation">.</span>CenterCrop<span class="token punctuation">(</span><span class="token number">224</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># Why do we choose 224 x 224?</span>
+    transforms<span class="token punctuation">.</span>ToTensor<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    transforms<span class="token punctuation">.</span>Normalize<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">0.485</span><span class="token punctuation">,</span> <span class="token number">0.456</span><span class="token punctuation">,</span> <span class="token number">0.406</span><span class="token punctuation">)</span><span class="token punctuation">,</span>   <span class="token comment"># Using ImageNet norms</span>
+                         <span class="token punctuation">(</span><span class="token number">0.229</span><span class="token punctuation">,</span> <span class="token number">0.224</span><span class="token punctuation">,</span> <span class="token number">0.225</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>最后加载trainset 和testset，定义train和testloader：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">unit_size <span class="token operator">=</span> <span class="token number">5</span>
+
+train_split <span class="token operator">=</span> <span class="token number">0.90</span> <span class="token comment"># Defines the ratio of train/test data.</span>
+
+test_split <span class="token operator">=</span> <span class="token number">1</span> <span class="token operator">-</span> train_split
+train_size <span class="token operator">=</span> unit_size <span class="token operator">*</span> <span class="token builtin">round</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>data_df<span class="token punctuation">)</span><span class="token operator">*</span>train_split <span class="token operator">/</span> unit_size<span class="token punctuation">)</span>
+
+test_size <span class="token operator">=</span> unit_size <span class="token operator">*</span> <span class="token builtin">round</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>data_df<span class="token punctuation">)</span><span class="token operator">*</span>test_split <span class="token operator">/</span> unit_size<span class="token punctuation">)</span>
+
+dataset_train <span class="token operator">=</span> Flickr8k<span class="token punctuation">(</span>
+    df<span class="token operator">=</span>data_df<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">.</span>reset_index<span class="token punctuation">(</span>drop<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    vocab<span class="token operator">=</span>vocab<span class="token punctuation">,</span>
+    transform<span class="token operator">=</span>data_transform<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+
+dataset_test <span class="token operator">=</span> Flickr8k<span class="token punctuation">(</span>
+    df<span class="token operator">=</span>data_df<span class="token punctuation">[</span>train_size<span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">.</span>reset_index<span class="token punctuation">(</span>drop<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    vocab<span class="token operator">=</span>vocab<span class="token punctuation">,</span>
+    transform<span class="token operator">=</span>data_transform<span class="token punctuation">,</span>
+<span class="token punctuation">)</span>
+train_loader <span class="token operator">=</span> torch<span class="token punctuation">.</span>utils<span class="token punctuation">.</span>data<span class="token punctuation">.</span>DataLoader<span class="token punctuation">(</span>
+  dataset_train<span class="token punctuation">,</span>
+  batch_size<span class="token operator">=</span><span class="token number">64</span><span class="token punctuation">,</span> 
+  shuffle<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span>
+  num_workers<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span>
+  collate_fn<span class="token operator">=</span>caption_collate_fn
+<span class="token punctuation">)</span>
+test_loader <span class="token operator">=</span> torch<span class="token punctuation">.</span>utils<span class="token punctuation">.</span>data<span class="token punctuation">.</span>DataLoader<span class="token punctuation">(</span>
+  dataset_test<span class="token punctuation">,</span>
+  batch_size<span class="token operator">=</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token comment">#因为在collect_fn里面我们使用lambda函数进行每个batch的排列，所以为了在测试</span>
+  shuffle<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span><span class="token comment">#方便看到单一图片的生成标题，我们使用5来作为batch_size（5为flickr8k 5个标题对应一个图片</span>
+  num_workers<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span>
+  collate_fn<span class="token operator">=</span>caption_collate_fn
+<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="定义CNN-encoder和RNN-decoder"><a href="#定义CNN-encoder和RNN-decoder" class="headerlink" title="定义CNN encoder和RNN decoder"></a>定义CNN encoder和RNN decoder</h2><h3 id="CNN-创建"><a href="#CNN-创建" class="headerlink" title="CNN 创建"></a>CNN 创建</h3><p>为了加快训练速度，在CNN encoder定义时我们使用Pytorch提供的pre-trained ResNet152模型，但是为了符合我们所定义的embed size(这个如果定义为1000训练时长就太久了)我们将ResNet152的最后一层fully connective 层切除：</p>
+<img src="/2020/05/15/%E4%BD%BF%E7%94%A8%E5%BE%AA%E7%8E%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88RecurrentNeuralNetwork%EF%BC%89%E4%BB%A5%E5%8F%8A%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%EF%BC%88CNN%EF%BC%89%E7%94%9F%E6%88%90%E5%9B%BE%E7%89%87%E6%A0%87%E9%A2%98/image-20210129225436730.png" class="" title="image-20210129225436730">
+
+<p>的num_classes=1000改为我们的embed_size 的尺寸，所以我们需要对ResNet152进行一个小小的改造：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">EncoderCNN</span><span class="token punctuation">(</span>nn<span class="token punctuation">.</span>Module<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> embed_size<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Load the pretrained ResNet-152 and replace top fc layer."""</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span>EncoderCNN<span class="token punctuation">,</span> self<span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        resnet <span class="token operator">=</span> models<span class="token punctuation">.</span>resnet152<span class="token punctuation">(</span>pretrained<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span> <span class="token comment"># Pre-trained on ImageNet by default</span>
+        layers <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span>resnet<span class="token punctuation">.</span>children<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span>      <span class="token comment">#切除ResNet152最后一程、层</span>
+        <span class="token comment"># Unpack the layers and create a new Sequential</span>
+        self<span class="token punctuation">.</span>resnet <span class="token operator">=</span> nn<span class="token punctuation">.</span>Sequential<span class="token punctuation">(</span><span class="token operator">*</span>layers<span class="token punctuation">)</span>
+        
+        <span class="token comment"># We want a specific output size, which is the size of our embedding, so</span>
+        <span class="token comment"># we feed our extracted features from the last fc layer (dimensions 1 x 1000)</span>
+        <span class="token comment"># 添加一层将ResNet152生成成我们需要的embed_size长度</span>
+        self<span class="token punctuation">.</span>linear <span class="token operator">=</span> nn<span class="token punctuation">.</span>Linear<span class="token punctuation">(</span>resnet<span class="token punctuation">.</span>fc<span class="token punctuation">.</span>in_features<span class="token punctuation">,</span> embed_size<span class="token punctuation">)</span>
+        
+        <span class="token comment"># Batch normalisation可以加速训练</span>
+        self<span class="token punctuation">.</span>bn <span class="token operator">=</span> nn<span class="token punctuation">.</span>BatchNorm1d<span class="token punctuation">(</span>embed_size<span class="token punctuation">,</span> momentum<span class="token operator">=</span><span class="token number">0.01</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>ft <span class="token operator">=</span> nn<span class="token punctuation">.</span>Flatten<span class="token punctuation">(</span><span class="token punctuation">)</span> 
+
+
+    <span class="token keyword">def</span> <span class="token function">forward</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> out<span class="token punctuation">)</span><span class="token punctuation">:</span>
+      <span class="token keyword">with</span> torch<span class="token punctuation">.</span>no_grad<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        out <span class="token operator">=</span> self<span class="token punctuation">.</span>resnet<span class="token punctuation">(</span>out<span class="token punctuation">)</span>
+      out <span class="token operator">=</span> self<span class="token punctuation">.</span>ft<span class="token punctuation">(</span>out<span class="token punctuation">)</span>
+      out <span class="token operator">=</span>  self<span class="token punctuation">.</span>linear<span class="token punctuation">(</span>out<span class="token punctuation">)</span>
+      out <span class="token operator">=</span> self<span class="token punctuation">.</span>bn<span class="token punctuation">(</span>out<span class="token punctuation">)</span>
+
+      <span class="token keyword">return</span> out<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="RNN-创建"><a href="#RNN-创建" class="headerlink" title="RNN 创建"></a>RNN 创建</h3><p>RNN的定义参考Pytorch 官方LSTM tutorial，通过设置RNN的输入size，embeded_size可以直接构造合适的decoder层，但是这边需要注意把batch_first设置为true，因为pytorch默认的RNN读取顺序是整行读取，我们需要将其修改为多行逐字读取，Pytorch默认该模式是为了提高并发效率，但是该项目并不适用这个方向。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">DecoderLTSM</span><span class="token punctuation">(</span>nn<span class="token punctuation">.</span>Module<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> embed_size<span class="token punctuation">,</span> hidden_size<span class="token punctuation">,</span> vocab_size<span class="token punctuation">,</span> num_layers<span class="token punctuation">,</span> max_seq_length<span class="token operator">=</span><span class="token number">20</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Set the hyper-parameters and build the layers."""</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span>DecoderLTSM<span class="token punctuation">,</span> self<span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span> 
+        
+        self<span class="token punctuation">.</span>embed <span class="token operator">=</span> nn<span class="token punctuation">.</span>Embedding<span class="token punctuation">(</span>vocab_size<span class="token punctuation">,</span> embed_size<span class="token punctuation">)</span> <span class="token comment">#设定Embed层，每个单词位置可能出现的情况次数以及可能最长的句子长度设定到embedsize里</span>
+
+
+        self<span class="token punctuation">.</span>linear <span class="token operator">=</span> nn<span class="token punctuation">.</span>Linear<span class="token punctuation">(</span>hidden_size<span class="token punctuation">,</span> vocab_size<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>max_seq_length <span class="token operator">=</span> max_seq_length
+        
+    <span class="token keyword">def</span> <span class="token function">forward</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> features<span class="token punctuation">,</span> captions<span class="token punctuation">,</span> lengths<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Decode image feature vectors and generates captions."""</span>
+        embeddings <span class="token operator">=</span> self<span class="token punctuation">.</span>embed<span class="token punctuation">(</span>captions<span class="token punctuation">)</span>
+        embeddings <span class="token operator">=</span> torch<span class="token punctuation">.</span>cat<span class="token punctuation">(</span><span class="token punctuation">(</span>features<span class="token punctuation">.</span>unsqueeze<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> embeddings<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
+        packed <span class="token operator">=</span> pack_padded_sequence<span class="token punctuation">(</span>embeddings<span class="token punctuation">,</span> lengths<span class="token punctuation">,</span> batch_first<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span> <span class="token comment"># batch_first 默认为false可以加速并行训练效率，这边为了</span>
+        																	 <span class="token comment"># 生成的标题行正确设置为true转置RNN 输入顺序</span>
+        hiddens<span class="token punctuation">,</span> _ <span class="token operator">=</span> self<span class="token punctuation">.</span>lstm<span class="token punctuation">(</span>packed<span class="token punctuation">)</span> <span class="token comment"># 如果想使用RNN可以将该行替换为rnn</span>
+        outputs <span class="token operator">=</span> self<span class="token punctuation">.</span>linear<span class="token punctuation">(</span>hiddens<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> outputs
+    
+    <span class="token keyword">def</span> <span class="token function">sample</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> features<span class="token punctuation">,</span> states<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Generate captions for given image features using greedy search."""</span>
+        sampled_ids <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        inputs <span class="token operator">=</span> features<span class="token punctuation">.</span>unsqueeze<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>max_seq_length<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            hiddens<span class="token punctuation">,</span> states <span class="token operator">=</span> self<span class="token punctuation">.</span>lstm<span class="token punctuation">(</span>inputs<span class="token punctuation">,</span> states<span class="token punctuation">)</span>          <span class="token comment"># hiddens: (batch_size, 1, hidden_size)</span>
+            outputs <span class="token operator">=</span> self<span class="token punctuation">.</span>linear<span class="token punctuation">(</span>hiddens<span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>            <span class="token comment"># outputs:  (batch_size, vocab_size)</span>
+            _<span class="token punctuation">,</span> predicted <span class="token operator">=</span> outputs<span class="token punctuation">.</span><span class="token builtin">max</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>                        <span class="token comment"># predicted: (batch_size)</span>
+            sampled_ids<span class="token punctuation">.</span>append<span class="token punctuation">(</span>predicted<span class="token punctuation">)</span>
+            inputs <span class="token operator">=</span> self<span class="token punctuation">.</span>embed<span class="token punctuation">(</span>predicted<span class="token punctuation">)</span>                       <span class="token comment"># inputs: (batch_size, embed_size)</span>
+            inputs <span class="token operator">=</span> inputs<span class="token punctuation">.</span>unsqueeze<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>                         <span class="token comment"># inputs: (batch_size, 1, embed_size)</span>
+        sampled_ids <span class="token operator">=</span> torch<span class="token punctuation">.</span>stack<span class="token punctuation">(</span>sampled_ids<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>                <span class="token comment"># sampled_ids: (batch_size, max_seq_length)</span>
+        <span class="token keyword">return</span> sampled_ids<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<h2 id="模型训练"><a href="#模型训练" class="headerlink" title="模型训练"></a>模型训练</h2><p>定义训练模型逻辑：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># Train the models</span>
+<span class="token keyword">def</span> <span class="token function">train_model</span><span class="token punctuation">(</span>encoder<span class="token punctuation">,</span>decoder<span class="token punctuation">,</span>criterion<span class="token punctuation">,</span>optimizer<span class="token punctuation">,</span>model_type<span class="token punctuation">)</span><span class="token punctuation">:</span>
+  total_step <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>train_loader<span class="token punctuation">)</span>
+  loss_summarize <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  <span class="token keyword">for</span> epoch <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>init_epochs<span class="token punctuation">,</span> num_epochs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    each_epoch_loss <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    starttime <span class="token operator">=</span> endtime <span class="token operator">=</span> datetime<span class="token punctuation">.</span>datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span> i<span class="token punctuation">,</span> <span class="token punctuation">(</span>images<span class="token punctuation">,</span> captions<span class="token punctuation">,</span> lengths<span class="token punctuation">)</span> <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>train_loader<span class="token punctuation">)</span><span class="token punctuation">:</span>
+      <span class="token comment"># Set mini-batch dataset</span>
+      images <span class="token operator">=</span> images<span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token punctuation">)</span>
+      captions <span class="token operator">=</span> captions<span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token punctuation">)</span>
+      <span class="token comment"># Packed as well as we'll compare to the decoder outputs</span>
+      targets <span class="token operator">=</span> pack_padded_sequence<span class="token punctuation">(</span>captions<span class="token punctuation">,</span> lengths<span class="token punctuation">,</span> batch_first<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+
+      <span class="token comment"># Forward, backward and optimize</span>
+      <span class="token comment"># 输出标题生成结果之后与target做交叉熵</span>
+      features <span class="token operator">=</span> encoder<span class="token punctuation">(</span>images<span class="token punctuation">)</span>
+      outputs <span class="token operator">=</span> decoder<span class="token punctuation">(</span>features<span class="token punctuation">,</span> captions<span class="token punctuation">,</span> lengths<span class="token punctuation">)</span>
+
+      loss <span class="token operator">=</span> criterion<span class="token punctuation">(</span>outputs<span class="token punctuation">,</span> targets<span class="token punctuation">)</span>
+      
+      <span class="token comment"># Zero gradients for both networks</span>
+      decoder<span class="token punctuation">.</span>zero_grad<span class="token punctuation">(</span><span class="token punctuation">)</span>
+      encoder<span class="token punctuation">.</span>zero_grad<span class="token punctuation">(</span><span class="token punctuation">)</span>
+      loss<span class="token punctuation">.</span>backward<span class="token punctuation">(</span><span class="token punctuation">)</span>
+      optimizer<span class="token punctuation">.</span>step<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+      <span class="token comment"># # Print log info</span>
+      <span class="token keyword">if</span> i <span class="token operator">%</span> log_step <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+        endtime <span class="token operator">=</span> datetime<span class="token punctuation">.</span>datetime<span class="token punctuation">.</span>now<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'Epoch [&#123;&#125;/&#123;&#125;], Step [&#123;&#125;/&#123;&#125;], Loss: &#123;:.4f&#125;， Time comsumption:&#123;&#125;'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>epoch<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span> num_epochs<span class="token punctuation">,</span> i<span class="token punctuation">,</span> total_step<span class="token punctuation">,</span> loss<span class="token punctuation">.</span>item<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> endtime<span class="token operator">-</span>starttime<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        starttime <span class="token operator">=</span> endtime
+        each_epoch_loss<span class="token punctuation">.</span>append<span class="token punctuation">(</span>loss<span class="token punctuation">.</span>item<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    torch<span class="token punctuation">.</span>save<span class="token punctuation">(</span>decoder<span class="token punctuation">.</span>state_dict<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> model_path <span class="token operator">+</span> model_type<span class="token operator">+</span><span class="token string">'-decoder-epoch_&#123;&#125;.ckpt'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>epoch<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment">#因为训练时间比较长需要把每个</span>
+    torch<span class="token punctuation">.</span>save<span class="token punctuation">(</span>encoder<span class="token punctuation">.</span>state_dict<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> model_path <span class="token operator">+</span> model_type<span class="token operator">+</span><span class="token string">'-encoder-epoch_&#123;&#125;.ckpt'</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>epoch<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token comment">#epoch的模型储存防止训练终止</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<p>需要将训练中用到的对象进行创建，之后进行训练：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># Build the LSTM models</span>
+encoder <span class="token operator">=</span> EncoderCNN<span class="token punctuation">(</span>embed_size<span class="token punctuation">)</span><span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token punctuation">)</span>
+decoder <span class="token operator">=</span> DecoderLTSM<span class="token punctuation">(</span>embed_size<span class="token punctuation">,</span> hidden_size<span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">(</span>vocab<span class="token punctuation">)</span><span class="token punctuation">,</span> num_layers<span class="token punctuation">)</span><span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token punctuation">)</span>
+
+<span class="token comment"># Loss and optimizer</span>
+criterion <span class="token operator">=</span> nn<span class="token punctuation">.</span>CrossEntropyLoss<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment">#因为我们要利用预训练模型，所以这边我们只需要更新decoder以及encode的fully connective和batch normal的参数</span>
+params <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span>
+    decoder<span class="token punctuation">.</span>parameters<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token builtin">list</span><span class="token punctuation">(</span>encoder<span class="token punctuation">.</span>linear<span class="token punctuation">.</span>parameters<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token builtin">list</span><span class="token punctuation">(</span>encoder<span class="token punctuation">.</span>bn<span class="token punctuation">.</span>parameters<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span>
+
+optimizer <span class="token operator">=</span> torch<span class="token punctuation">.</span>optim<span class="token punctuation">.</span>Adam<span class="token punctuation">(</span>params<span class="token punctuation">,</span> lr<span class="token operator">=</span>learning_rate<span class="token punctuation">)</span>
+model_type <span class="token operator">=</span> <span class="token string">"lstm"</span>
+train_model<span class="token punctuation">(</span>encoder<span class="token punctuation">,</span>decoder<span class="token punctuation">,</span>criterion<span class="token punctuation">,</span>optimizer<span class="token punctuation">,</span>model_type<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><p>完成训练后我们可以提取相应的模型以及字典进行测试：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">preprocess <span class="token operator">=</span> transforms<span class="token punctuation">.</span>Compose<span class="token punctuation">(</span><span class="token punctuation">[</span> 
+    transforms<span class="token punctuation">.</span>Resize<span class="token punctuation">(</span><span class="token number">224</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    transforms<span class="token punctuation">.</span>CenterCrop<span class="token punctuation">(</span><span class="token number">224</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># Why do we choose 224 x 224?</span>
+    transforms<span class="token punctuation">.</span>ToTensor<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    transforms<span class="token punctuation">.</span>Normalize<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">0.485</span><span class="token punctuation">,</span> <span class="token number">0.456</span><span class="token punctuation">,</span> <span class="token number">0.406</span><span class="token punctuation">)</span><span class="token punctuation">,</span>   <span class="token comment"># Using ImageNet norms</span>
+                         <span class="token punctuation">(</span><span class="token number">0.229</span><span class="token punctuation">,</span> <span class="token number">0.224</span><span class="token punctuation">,</span> <span class="token number">0.225</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+
+<span class="token keyword">import</span> pickle
+f <span class="token operator">=</span> <span class="token builtin">open</span><span class="token punctuation">(</span>vocab_file<span class="token punctuation">,</span> <span class="token string">'rb'</span><span class="token punctuation">)</span>
+vocab <span class="token operator">=</span> pickle<span class="token punctuation">.</span>load<span class="token punctuation">(</span>f<span class="token punctuation">)</span>
+f<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+encoder_path <span class="token operator">=</span> root<span class="token operator">+</span><span class="token string">'/lstm-encoder-epoch_5.ckpt'</span>
+decoder_path <span class="token operator">=</span> root<span class="token operator">+</span><span class="token string">'/lstm-decoder-epoch_5.ckpt'</span>
+
+encoder <span class="token operator">=</span> EncoderCNN<span class="token punctuation">(</span>embed_size<span class="token punctuation">)</span><span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token punctuation">)</span>
+encoder<span class="token punctuation">.</span>load_state_dict<span class="token punctuation">(</span>torch<span class="token punctuation">.</span>load<span class="token punctuation">(</span>encoder_path<span class="token punctuation">)</span><span class="token punctuation">)</span>
+encoder<span class="token punctuation">.</span><span class="token builtin">eval</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+decoder <span class="token operator">=</span> DecoderLTSM<span class="token punctuation">(</span>embed_size<span class="token punctuation">,</span> hidden_size<span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">(</span>vocab<span class="token punctuation">)</span><span class="token punctuation">,</span> num_layers<span class="token punctuation">)</span><span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token punctuation">)</span>
+decoder<span class="token punctuation">.</span>load_state_dict<span class="token punctuation">(</span>torch<span class="token punctuation">.</span>load<span class="token punctuation">(</span>decoder_path<span class="token punctuation">)</span><span class="token punctuation">)</span>
+decoder<span class="token punctuation">.</span><span class="token builtin">eval</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+<p>自动化的测试可以使用BLUE进行测试，但是BLEU有一定的局限性，人工打印出来对比性能可能更符合目前的</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">input_tensor <span class="token operator">=</span> preprocess<span class="token punctuation">(</span>input_image<span class="token punctuation">)</span>
+images <span class="token operator">=</span> input_tensor<span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token punctuation">)</span>
+<span class="token keyword">with</span> torch<span class="token punctuation">.</span>no_grad<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+  features <span class="token operator">=</span> encoder<span class="token punctuation">(</span>images<span class="token punctuation">.</span>unsqueeze<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+  outputs <span class="token operator">=</span> decoder<span class="token punctuation">.</span>sample<span class="token punctuation">(</span>features<span class="token punctuation">)</span>
+
+<span class="token keyword">for</span> sentence <span class="token keyword">in</span> outputs<span class="token punctuation">:</span>
+  sentence_word_queue <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+  <span class="token keyword">for</span> word <span class="token keyword">in</span> sentence<span class="token punctuation">:</span>
+    sentence_word_queue<span class="token punctuation">.</span>append<span class="token punctuation">(</span>vocab<span class="token punctuation">.</span>translate_idx<span class="token punctuation">(</span>word<span class="token punctuation">.</span>cpu<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>item<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+new_sentence <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">for</span> generation_word <span class="token keyword">in</span> sentence_word_queue<span class="token punctuation">:</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token string">"&lt;start>"</span> <span class="token keyword">in</span> generation_word<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">continue</span>
+  <span class="token keyword">elif</span><span class="token punctuation">(</span><span class="token string">"&lt;end>"</span> <span class="token keyword">in</span> generation_word<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">break</span>
+  new_sentence<span class="token punctuation">.</span>append<span class="token punctuation">(</span>generation_word<span class="token punctuation">)</span>
+<span class="token keyword">from</span> nltk<span class="token punctuation">.</span>translate<span class="token punctuation">.</span>bleu_score <span class="token keyword">import</span> sentence_bleu
+<span class="token comment"># 1001773457_577c3a7d70.jpg#0	A black dog and a spotted dog are fighting</span>
+<span class="token comment"># 1001773457_577c3a7d70.jpg#1	A black dog and a tri-colored dog playing with each other on the road .</span>
+<span class="token comment"># 1001773457_577c3a7d70.jpg#2	A black dog and a white dog with brown spots are staring at each other in the street .</span>
+<span class="token comment"># 1001773457_577c3a7d70.jpg#3	Two dogs of different breeds looking at each other on the road .</span>
+<span class="token comment"># 1001773457_577c3a7d70.jpg#4	Two dogs on pavement moving toward each other .</span>
+reference <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'black'</span><span class="token punctuation">,</span> <span class="token string">'dog'</span><span class="token punctuation">,</span> <span class="token string">'and'</span><span class="token punctuation">,</span><span class="token string">'a'</span><span class="token punctuation">,</span> <span class="token string">'spotted'</span><span class="token punctuation">,</span><span class="token string">'dog'</span><span class="token punctuation">,</span><span class="token string">'are'</span><span class="token punctuation">,</span><span class="token string">'fighting'</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">,</span><span class="token string">'black'</span><span class="token punctuation">,</span><span class="token string">'dog'</span><span class="token punctuation">,</span><span class="token string">'and'</span><span class="token punctuation">,</span><span class="token string">'a'</span><span class="token punctuation">,</span><span class="token string">'tri-colored'</span><span class="token punctuation">,</span><span class="token string">'dog'</span><span class="token punctuation">,</span><span class="token string">'playing'</span><span class="token punctuation">,</span><span class="token string">'with'</span><span class="token punctuation">,</span><span class="token string">'each'</span><span class="token punctuation">,</span><span class="token string">'other'</span><span class="token punctuation">,</span><span class="token string">'on'</span><span class="token punctuation">,</span><span class="token string">'the'</span><span class="token punctuation">,</span><span class="token string">'road'</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token string">'a'</span><span class="token punctuation">,</span><span class="token string">'black'</span><span class="token punctuation">,</span><span class="token string">'dog'</span><span class="token punctuation">,</span><span class="token string">'and'</span><span class="token punctuation">,</span><span class="token string">'a'</span><span class="token punctuation">,</span><span class="token string">'white'</span><span class="token punctuation">,</span><span class="token string">'dog'</span><span class="token punctuation">,</span><span class="token string">'with'</span><span class="token punctuation">,</span><span class="token string">'brown'</span><span class="token punctuation">,</span><span class="token string">'spots'</span><span class="token punctuation">,</span><span class="token string">'are'</span><span class="token punctuation">,</span><span class="token string">'staring'</span><span class="token punctuation">,</span><span class="token string">'at'</span><span class="token punctuation">,</span><span class="token string">'each'</span><span class="token punctuation">,</span><span class="token string">'other'</span><span class="token punctuation">,</span><span class="token string">'in'</span><span class="token punctuation">,</span><span class="token string">'the'</span><span class="token punctuation">,</span><span class="token string">'street'</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token string">'two'</span><span class="token punctuation">,</span><span class="token string">'dogs'</span><span class="token punctuation">,</span><span class="token string">'of'</span><span class="token punctuation">,</span><span class="token string">'different'</span><span class="token punctuation">,</span><span class="token string">'breeds'</span><span class="token punctuation">,</span><span class="token string">'looking'</span><span class="token punctuation">,</span><span class="token string">'at'</span><span class="token punctuation">,</span><span class="token string">'each'</span><span class="token punctuation">,</span><span class="token string">'other'</span><span class="token punctuation">,</span><span class="token string">'on'</span><span class="token punctuation">,</span><span class="token string">'the'</span><span class="token punctuation">,</span><span class="token string">'road'</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token string">'two'</span><span class="token punctuation">,</span><span class="token string">'dogs'</span><span class="token punctuation">,</span><span class="token string">'on'</span><span class="token punctuation">,</span><span class="token string">'pavement'</span><span class="token punctuation">,</span><span class="token string">'moving'</span><span class="token punctuation">,</span><span class="token string">'toward'</span><span class="token punctuation">,</span><span class="token string">'each'</span><span class="token punctuation">,</span><span class="token string">'other'</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+score <span class="token operator">=</span> sentence_bleu<span class="token punctuation">(</span>reference<span class="token punctuation">,</span> new_sentence<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>score<span class="token punctuation">)</span> <span class="token comment">## 9.453946401578459e-155</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+
+<h2 id="Reference"><a href="#Reference" class="headerlink" title="Reference"></a>Reference</h2><div id="refer-anchor-1"></div>
+ [1] [Image Classification on ImageNet](https://paperswithcode.com/sota/image-classification-on-imagenet)
+
+
+
+<div id="refer-anchor-2"></div>
+ [2] [Meta Pseudo Labels](https://paperswithcode.com/paper/meta-pseudo-labels)
+
+<div id="refer-anchor-3"></div>
+
+<p> [3] <a href="https://bawanag.github.io/2020/12/20/Comparison-of-Different-Deep-Learning-Technologies/">Comparison of Different Deep Learning technologies toward Choosing Appropriate Convolution Neural Network architecture</a></p>
+<div id="refer-anchor-4"></div>
+
+<p> [4] <a target="_blank" rel="noopener" href="https://onlinelibrary.wiley.com/doi/abs/10.1207/s15516709cog1402_1">Finding Structure in Time</a></p>
+<div id="refer-anchor-5"></div>
+
+<p> [5] <a target="_blank" rel="noopener" href="https://www.bioinf.jku.at/publications/older/2604.pdf">Long Short-Term Memory</a></p>
+</div></div><div class="nextinfo"><p>上一篇：<a href="/2020/12/20/Comparison-of-Different-Deep-Learning-Technologies/">Comparison of Different Deep Learning technologies toward Choosing Appropriate Convolution Neural Network architecture</a></p><p>下一篇：<a href="/2020/02/13/%E4%BD%BF%E7%94%A8%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88Muti-Perceptron%EF%BC%89%E9%80%9A%E8%BF%87%E8%8A%B1%E7%93%A3%E4%BB%A5%E5%8F%8A%E8%8A%B1%E8%90%BC%E7%9A%84%E9%95%BF%E5%AE%BD%E5%8C%BA%E5%88%86%E5%8F%98%E8%89%B2%E9%B8%A2%E5%B0%BE%EF%BC%8C%E5%B1%B1%E9%B8%A2%E5%B0%BE%EF%BC%8C%E4%BB%A5%E5%8F%8A%E7%BB%B4%E5%90%89%E5%B0%BC%E4%BA%9A%E9%B8%A2%E5%B0%BE/">使用简单的多层感知器（Muti-Perceptron）通过花瓣以及花萼的长宽区分变色鸢尾，山鸢尾，以及维吉尼亚鸢尾（一）单层感知器（single-Perceptron)</a></p></div><div class="news_pl"><div id="comment_container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+<script src="/js/md5.min.js"></script>
+<script>const gitalk = new Gitalk({
+    clientID: 'd07f1f6716764ca4067c',
+    clientSecret: '048c64f29b2fa6546065f4f464951b10544d84ea',
+    repo: 'bawanag.github.io',
+    owner: 'bawanag',
+    admin: ['bawanag'],
+    id: md5("2020/05/15/使用循环神经网络（RecurrentNeuralNetwork）以及卷积神经网络（CNN）生成图片标题/"),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: true  // Facebook-like distraction free mode
+})
+gitalk.render('comment_container')</script></div></div></div></main><aside class="r_box"><div class="card box"><h2>我的名片</h2><div class="box_con"><p>Bawanag</p>
+<p>职业：AI炼丹师、全栈软件工程师、Java、算法劝退师</p>
+<p>Email：tyj8631775@outlook.com</p>
+</div></div><div class="category box"><h2>文章分类</h2><div class="box_con"><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Dissertation/">Dissertation</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Experience/">Experience</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Research/">Research</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tutorial/">Tutorial</a><span class="category-list-count">1</span></li></ul></div></div><div align="center" class="myphoto box"><h2> </h2><div align="center" class="box_con"><img src="/images/sss.jpg"></div></div></aside></article><footer><section class="footer_bottom"><div class="footer_container"><p class="copyright"></p><ul class="social_network"></ul></div></section></footer><div class="cd-top"><i class="iconfont icon-top"></i></div>
+<script src="/js/jquery.min.js"></script>
+<script src="/js/scrollreveal.js"></script>
+<script src="/js/hc-sticky.js"></script>
+<script src="/js/canvas-nest.js" type="text/javascript" color="47,135,193" opacity="0.7" zIndex="-2" count="199"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/highlight.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/java.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/javascript.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script src="/js/common.js?v=202102031720.js"></script>
+<script src="/js/index.js?v=202102031720.js"></script>
+</body></html>
