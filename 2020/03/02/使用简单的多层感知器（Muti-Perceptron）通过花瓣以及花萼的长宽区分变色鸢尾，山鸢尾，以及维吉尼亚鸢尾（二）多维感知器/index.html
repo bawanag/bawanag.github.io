@@ -1,0 +1,185 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>使用简单的多层感知器（Muti-Perceptron）通过花瓣以及花萼的长宽区分鸢尾花类型（二）多维感知器</title><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><meta http-equiv="X-UA-Compatible" content="IE=Edge，chrome=1"><meta name="description" content=""><meta name="keywords"><meta name="author" content="Yuanjian Tao"><link rel="short icon" href="/images/favicon.png"><link rel="icon" href="/images/favicon.png"><!--[if lt IE 9]>
+<script src="/js/modernizr.js"></script>
+<![endif]-->
+<link rel="stylesheet" href="/css/iconfont.css">
+
+<link rel="stylesheet" href="/css/index.css?v=202102071117.css">
+<link rel="stylesheet" href="/css/info.css?v=202102071117.css">
+<link href="https://cdn.bootcss.com/highlight.js/9.15.9/styles/github.min.css" rel="stylesheet"><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+<!-- hexo injector head_end end --><meta name="generator" content="Hexo 5.3.0"><link rel="alternate" href="/atom.xml" title="Bawanag Blog" type="application/atom+xml">
+</head><body><header id="header" class="header-navigation"><nav><div class="logo"><a href="https://bawanag.github.io">Bawanag Blog</a></div><h2 id="mnavh"><span class="navicon"></span></h2><ul id="starlist"><li><a href="/">首页</a></li><li><a href="/time.html">时间轴</a></li></ul><div class="searchbox"><div id="search_bar" class="search_bar"><input id="keyboard" placeholder="想搜点什么呢.." type="text" name="keyboard" autocomplete="off" class="input"><p class="search_ico"><span></span></p></div></div></nav></header><article><main><div class="con_warp"><div class="infosbox"><div class="newsview"><h3 class="news_title">使用简单的多层感知器（Muti-Perceptron）通过花瓣以及花萼的长宽区分鸢尾花类型（二）多维感知器</h3><div class="bloginfo"><ul><li class="author">作者：<a href="/">Yuanjian Tao</a></li><li class="lmname"><a href="/">Research</a></li><li class="timer">时间：2020-03-02 17:45:00</li><li class="view"><span id="busuanzi_value_page_pv">99</span><span>次访问</span></li></ul></div><div class="tags"><a href="/tags/Deep-Learning/" target="_blank">Deep Learning</a><a href="/tags/Artificial-Intelligence/" target="_blank">Artificial Intelligence</a><a href="/tags/Bio-Inspired-Computing/" target="_blank">Bio-Inspired Computing</a><a href="/tags/Research/" target="_blank">Research</a></div><div class="news_con"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在<a href="https://bawanag.github.io/2020/02/13/%E4%BD%BF%E7%94%A8%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88Muti-Perceptron%EF%BC%89%E9%80%9A%E8%BF%87%E8%8A%B1%E7%93%A3%E4%BB%A5%E5%8F%8A%E8%8A%B1%E8%90%BC%E7%9A%84%E9%95%BF%E5%AE%BD%E5%8C%BA%E5%88%86%E5%8F%98%E8%89%B2%E9%B8%A2%E5%B0%BE%EF%BC%8C%E5%B1%B1%E9%B8%A2%E5%B0%BE%EF%BC%8C%E4%BB%A5%E5%8F%8A%E7%BB%B4%E5%90%89%E5%B0%BC%E4%BA%9A%E9%B8%A2%E5%B0%BE/">上一篇博客</a>中，我们讨论了如何通过Numpy实现单层二维感知器，本篇文章我们尝试将其拓展到高维度的输入进行判断。</p>
+<h2 id="Object-高维感知器"><a href="#Object-高维感知器" class="headerlink" title="Object 高维感知器"></a>Object 高维感知器</h2><p>iris.data 文件给出了我们鸢尾花的花瓣与花萼的长宽，示例数据如下图所示：</p>
+<img src="/2020/03/02/%E4%BD%BF%E7%94%A8%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88Muti-Perceptron%EF%BC%89%E9%80%9A%E8%BF%87%E8%8A%B1%E7%93%A3%E4%BB%A5%E5%8F%8A%E8%8A%B1%E8%90%BC%E7%9A%84%E9%95%BF%E5%AE%BD%E5%8C%BA%E5%88%86%E5%8F%98%E8%89%B2%E9%B8%A2%E5%B0%BE%EF%BC%8C%E5%B1%B1%E9%B8%A2%E5%B0%BE%EF%BC%8C%E4%BB%A5%E5%8F%8A%E7%BB%B4%E5%90%89%E5%B0%BC%E4%BA%9A%E9%B8%A2%E5%B0%BE%EF%BC%88%E4%BA%8C%EF%BC%89%E5%A4%9A%E7%BB%B4%E6%84%9F%E7%9F%A5%E5%99%A8/image-20210206164251468.png" class="" title="image-20210206164251468">
+
+<p>这边我们需要输入4 种不同的输入数据，加上bias则input向量的维度为5，同样的逻辑通过运算输出鸢尾花的种类，通过backpropagation对感知器进行训练：</p>
+<img src="/2020/03/02/%E4%BD%BF%E7%94%A8%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88Muti-Perceptron%EF%BC%89%E9%80%9A%E8%BF%87%E8%8A%B1%E7%93%A3%E4%BB%A5%E5%8F%8A%E8%8A%B1%E8%90%BC%E7%9A%84%E9%95%BF%E5%AE%BD%E5%8C%BA%E5%88%86%E5%8F%98%E8%89%B2%E9%B8%A2%E5%B0%BE%EF%BC%8C%E5%B1%B1%E9%B8%A2%E5%B0%BE%EF%BC%8C%E4%BB%A5%E5%8F%8A%E7%BB%B4%E5%90%89%E5%B0%BC%E4%BA%9A%E9%B8%A2%E5%B0%BE%EF%BC%88%E4%BA%8C%EF%BC%89%E5%A4%9A%E7%BB%B4%E6%84%9F%E7%9F%A5%E5%99%A8/image-20210206164106215.png" class="" title="image-20210206164106215">
+
+<h2 id="Object1-思路"><a href="#Object1-思路" class="headerlink" title="Object1 思路"></a>Object1 思路</h2><p>感知器的逻辑不变，我们可以尝试将输入向量$\vec x$维度提高至5，同时$\vec w$提升至5，输出经过sigmoid函数也是0或者1。之后我们可以尝试将iris.data输入后看看最终结果。</p>
+<div>
+    <script type="text/javascript"
+      src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script type="text/x-mathjax-config">
+          MathJax.Hub.Config({
+              tex2jax: {
+                inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                processEscapes: true
+              }
+            });
+          </script>
+    <script type="text/x-mathjax-config">
+          MathJax.Hub.Config({
+                tex2jax: {
+                  skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+                }
+              });
+          </script>
+    <script type="text/x-mathjax-config">
+          MathJax.Hub.Queue(function() {
+                  var all = MathJax.Hub.getAllJax(), i;
+                  for(i=0; i < all.length; i += 1) {
+                      all[i].SourceElement().parentNode.className += ' has-jax';
+                  }
+              });
+          </script>
+    <script type="text/javascript" src="<%- theme.mathjax.cdn %>"></script>
+</div>
+
+<h3 id="数据加载"><a href="#数据加载" class="headerlink" title="数据加载"></a>数据加载</h3><p>首先我们需要加载必要的库：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> random
+<span class="token keyword">import</span> matplotlib<span class="token punctuation">.</span>pyplot <span class="token keyword">as</span> plt<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>因为数据集中包含的鸢尾花类型不易于识别，我们将其按行读取，之后附上3维向量每一个维度0或者1代表着该数据是山，变色，维吉尼亚鸢尾：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">inputs  <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+outputs <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+d <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+d<span class="token punctuation">[</span><span class="token string">'Iris-setosa\n'</span><span class="token punctuation">]</span>     <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+d<span class="token punctuation">[</span><span class="token string">'Iris-versicolor\n'</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+d<span class="token punctuation">[</span><span class="token string">'Iris-virginica\n'</span><span class="token punctuation">]</span>  <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+
+<span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">'iris.data'</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
+    lines<span class="token operator">=</span>f<span class="token punctuation">.</span>readlines<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">for</span> line <span class="token keyword">in</span> lines<span class="token punctuation">:</span>
+        items<span class="token operator">=</span>line<span class="token punctuation">.</span>split<span class="token punctuation">(</span><span class="token string">','</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>items<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">5</span><span class="token punctuation">:</span>
+            inp <span class="token operator">=</span>  <span class="token punctuation">[</span><span class="token builtin">float</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span> <span class="token keyword">for</span> x <span class="token keyword">in</span> items<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">:</span><span class="token number">4</span><span class="token punctuation">]</span> <span class="token punctuation">]</span>
+            inputs<span class="token punctuation">.</span>append<span class="token punctuation">(</span>inp<span class="token punctuation">)</span>
+            out <span class="token operator">=</span> d<span class="token punctuation">[</span>items<span class="token punctuation">[</span><span class="token number">4</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+            outputs<span class="token punctuation">.</span>append<span class="token punctuation">(</span>out<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>好了，现在我们可以生成trainset和validset：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">ids<span class="token operator">=</span>random<span class="token punctuation">.</span>sample<span class="token punctuation">(</span><span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token builtin">len</span><span class="token punctuation">(</span>inputs<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token punctuation">)</span> <span class="token comment"># generate 100 random ids</span>
+<span class="token comment">#training set</span>
+train_in <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+train_out<span class="token operator">=</span><span class="token punctuation">[</span><span class="token punctuation">]</span>
+<span class="token keyword">for</span> <span class="token builtin">id</span> <span class="token keyword">in</span> ids<span class="token punctuation">:</span>
+    train_in<span class="token punctuation">.</span>append<span class="token punctuation">(</span>inputs<span class="token punctuation">[</span><span class="token builtin">id</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    train_out<span class="token punctuation">.</span>append<span class="token punctuation">(</span>outputs<span class="token punctuation">[</span><span class="token builtin">id</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+train_inputs  <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>train_in<span class="token punctuation">)</span>
+train_outputs <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>train_out<span class="token punctuation">)</span>
+
+<span class="token comment">#valid set</span>
+val_input <span class="token operator">=</span><span class="token punctuation">[</span><span class="token punctuation">]</span>
+val_output<span class="token operator">=</span><span class="token punctuation">[</span><span class="token punctuation">]</span>
+validation_ids <span class="token operator">=</span> <span class="token builtin">list</span><span class="token punctuation">(</span><span class="token builtin">set</span><span class="token punctuation">(</span><span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token builtin">len</span><span class="token punctuation">(</span>inputs<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token builtin">set</span><span class="token punctuation">(</span>ids<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">for</span> val_id <span class="token keyword">in</span> validation_ids<span class="token punctuation">:</span>
+    val_input<span class="token punctuation">.</span>append<span class="token punctuation">(</span>inputs<span class="token punctuation">[</span>val_id<span class="token punctuation">]</span><span class="token punctuation">)</span>
+    val_output<span class="token punctuation">.</span>append<span class="token punctuation">(</span>outputs<span class="token punctuation">[</span>val_id<span class="token punctuation">]</span><span class="token punctuation">)</span>
+val_inputs  <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>val_input<span class="token punctuation">)</span>
+val_outputs <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>val_output<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="构造多维感知器"><a href="#构造多维感知器" class="headerlink" title="构造多维感知器"></a>构造多维感知器</h3><p>为了方便观察训练的进度以及是否overfitting，我们话一个图表来记录感知器训练的accuracy变化：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">show_results</span><span class="token punctuation">(</span>train_accuracy_list<span class="token punctuation">,</span>valid_accuracy_list<span class="token punctuation">,</span>epoch<span class="token punctuation">)</span><span class="token punctuation">:</span> <span class="token comment"># plot performance over the training epochs</span>
+    epochs <span class="token operator">=</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>train_accuracy_list<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    nb_epochs    <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>epochs<span class="token punctuation">)</span>
+    plt<span class="token punctuation">.</span>axis<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span>nb_epochs<span class="token punctuation">,</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">1.2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    plt<span class="token punctuation">.</span>plot<span class="token punctuation">(</span>epochs<span class="token punctuation">,</span> train_accuracy_list<span class="token punctuation">,</span> <span class="token string">'bo'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Training accuracy'</span><span class="token punctuation">)</span>
+    plt<span class="token punctuation">.</span>plot<span class="token punctuation">(</span>epochs<span class="token punctuation">,</span> valid_accuracy_list<span class="token punctuation">,</span> <span class="token string">'b'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Validation accuracy'</span><span class="token punctuation">)</span>
+    plt<span class="token punctuation">.</span>title<span class="token punctuation">(</span><span class="token string">'Training and validation accuracy'</span><span class="token punctuation">)</span>
+    plt<span class="token punctuation">.</span>legend<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    plt<span class="token punctuation">.</span>show<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>多维感知器和二维感知器逻辑上是相同，我们只需要将输入的向量$\vec x$以及$\vec w$提升至5维，下面例子为判断是否为山鸢尾花的感知器的例子：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">setosa_sign <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+versicolor_sign <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+virginica_sign <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">.</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">.</span><span class="token punctuation">]</span>
+verify_type_temp <span class="token operator">=</span> setosa_sign <span class="token comment">#选择判断是否为山鸢尾花</span>
+
+verify_type <span class="token operator">=</span> <span class="token number">0</span>
+<span class="token keyword">for</span> s <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">:</span> 
+    <span class="token keyword">if</span> verify_type_temp<span class="token punctuation">[</span>s<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">:</span> 
+        verify_type <span class="token operator">=</span> s
+        <span class="token keyword">break</span>
+train_accuracy_list <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+valid_accuracy_list <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+lr <span class="token operator">=</span> <span class="token number">0.2</span> <span class="token comment">#设置学习率以及epoch</span>
+epoch <span class="token operator">=</span> <span class="token number">300</span>
+log_time <span class="token operator">=</span> <span class="token number">10</span> 
+log_step <span class="token operator">=</span> epoch<span class="token operator">/</span>log_time
+init_weight <span class="token operator">=</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>uniform<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">10</span><span class="token punctuation">,</span><span class="token number">10</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span>
+weight <span class="token operator">=</span> init_weight
+<span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>epoch<span class="token punctuation">)</span><span class="token punctuation">:</span>
+  trainset_collect_classify_time <span class="token operator">=</span> <span class="token number">0</span>
+  <span class="token keyword">for</span> j <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>train_inputs<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+      data_point <span class="token operator">=</span> np<span class="token punctuation">.</span>append<span class="token punctuation">(</span>train_inputs<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+      <span class="token comment">#calclulate the classification</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>train_outputs<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>verify_type<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+          <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token punctuation">(</span>weight<span class="token punctuation">.</span>dot<span class="token punctuation">(</span>data_point<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+              weight <span class="token operator">=</span> weight <span class="token operator">-</span> lr <span class="token operator">*</span> data_point
+          <span class="token keyword">else</span><span class="token punctuation">:</span>
+            trainset_collect_classify_time <span class="token operator">+=</span><span class="token number">1</span>
+      <span class="token keyword">elif</span><span class="token punctuation">(</span>train_outputs<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>verify_type<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+          <span class="token keyword">if</span><span class="token punctuation">(</span>weight<span class="token punctuation">.</span>dot<span class="token punctuation">(</span>data_point<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+              weight <span class="token operator">=</span> weight <span class="token operator">+</span> lr <span class="token operator">*</span> data_point
+          <span class="token keyword">else</span><span class="token punctuation">:</span>
+            trainset_collect_classify_time <span class="token operator">+=</span><span class="token number">1</span>
+  train_accuracy <span class="token operator">=</span> trainset_collect_classify_time<span class="token operator">/</span><span class="token number">100</span>
+  validset_collect_classify_time <span class="token operator">=</span> <span class="token number">0</span>
+  <span class="token keyword">for</span> j <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token builtin">len</span><span class="token punctuation">(</span>val_input<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+      data_point <span class="token operator">=</span> np<span class="token punctuation">.</span>append<span class="token punctuation">(</span>val_input<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>val_output<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>verify_type<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>data_point<span class="token punctuation">.</span>dot<span class="token punctuation">(</span>weight<span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+          validset_collect_classify_time <span class="token operator">+=</span><span class="token number">1</span>
+      <span class="token keyword">elif</span><span class="token punctuation">(</span>val_output<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">[</span>verify_type<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>data_point<span class="token punctuation">.</span>dot<span class="token punctuation">(</span>weight<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+          validset_collect_classify_time <span class="token operator">+=</span><span class="token number">1</span>
+  val_accuracy <span class="token operator">=</span> validset_collect_classify_time<span class="token operator">/</span><span class="token number">50</span>
+  <span class="token keyword">if</span> i <span class="token operator">%</span> log_step <span class="token operator">==</span> <span class="token number">0</span> <span class="token keyword">or</span> i <span class="token operator">==</span> <span class="token punctuation">(</span>epoch<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+      <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"epoch:[&#123;&#125;/&#123;&#125;]  train_accuracy:&#123;&#125;   valid accuracy:&#123;&#125;"</span><span class="token punctuation">.</span><span class="token builtin">format</span><span class="token punctuation">(</span>i<span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">,</span>epoch<span class="token punctuation">,</span>train_accuracy<span class="token punctuation">,</span>val_accuracy<span class="token punctuation">)</span><span class="token punctuation">)</span>
+      train_accuracy_list<span class="token punctuation">.</span>append<span class="token punctuation">(</span>train_accuracy<span class="token punctuation">)</span>
+      valid_accuracy_list<span class="token punctuation">.</span>append<span class="token punctuation">(</span>val_accuracy<span class="token punctuation">)</span>
+show_results<span class="token punctuation">(</span>train_accuracy_list<span class="token punctuation">,</span>valid_accuracy_list<span class="token punctuation">,</span>epoch<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>weight<span class="token punctuation">)</span> <span class="token comment"># [-2.04307993 11.27227739 -5.74571763 -1.39592451 -6.83716727] </span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>结果如下图所示：</p>
+<img src="/2020/03/02/%E4%BD%BF%E7%94%A8%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88Muti-Perceptron%EF%BC%89%E9%80%9A%E8%BF%87%E8%8A%B1%E7%93%A3%E4%BB%A5%E5%8F%8A%E8%8A%B1%E8%90%BC%E7%9A%84%E9%95%BF%E5%AE%BD%E5%8C%BA%E5%88%86%E5%8F%98%E8%89%B2%E9%B8%A2%E5%B0%BE%EF%BC%8C%E5%B1%B1%E9%B8%A2%E5%B0%BE%EF%BC%8C%E4%BB%A5%E5%8F%8A%E7%BB%B4%E5%90%89%E5%B0%BC%E4%BA%9A%E9%B8%A2%E5%B0%BE%EF%BC%88%E4%BA%8C%EF%BC%89%E5%A4%9A%E7%BB%B4%E6%84%9F%E7%9F%A5%E5%99%A8/image-20210206181548875.png" class="" title="image-20210206181548875">
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>现在我们已经可以实现一个感知器的基本设计思路，下篇文章我会介绍如何串联以及并联感知器实现多层感知器。</p>
+<h2 id="前言-1"><a href="#前言-1" class="headerlink" title="前言"></a>前言</h2><p>上篇文章我们介绍了多维感知器的基本设计思路以及输入输出结果，本章会介绍如何串联并联多维感知器使其形成多层感知器来实现单一神经网络判断鸢尾花的种类。</p>
+<h2 id="Object-多层感知器判断鸢尾花种类"><a href="#Object-多层感知器判断鸢尾花种类" class="headerlink" title="Object 多层感知器判断鸢尾花种类"></a>Object 多层感知器判断鸢尾花种类</h2><p>因为输入的维度是5，而且我们输出是具体花朵的3种不同的种类，如下图所示，所以我们需要3个感知器先判断鸢尾花是否是某种种类，之后整合下一层的判断输出最终的神经网络判断结果</p>
+
+
+</div></div><div class="nextinfo"><p>上一篇：<a href="/2020/04/13/%E4%BD%BF%E7%94%A8%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88Muti-Perceptron%EF%BC%89%E9%80%9A%E8%BF%87%E8%8A%B1%E7%93%A3%E4%BB%A5%E5%8F%8A%E8%8A%B1%E8%90%BC%E7%9A%84%E9%95%BF%E5%AE%BD%E5%8C%BA%E5%88%86%E5%8F%98%E8%89%B2%E9%B8%A2%E5%B0%BE%EF%BC%8C%E5%B1%B1%E9%B8%A2%E5%B0%BE%EF%BC%8C%E4%BB%A5%E5%8F%8A%E7%BB%B4%E5%90%89%E5%B0%BC%E4%BA%9A%E9%B8%A2%E5%B0%BE%EF%BC%88%E4%B8%89%EF%BC%89%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8/">使用简单的多层感知器（Muti-Perceptron）通过花瓣以及花萼的长宽区分鸢尾花类型（三）多层感知器</a></p><p>下一篇：<a href="/2020/02/13/%E4%BD%BF%E7%94%A8%E7%AE%80%E5%8D%95%E7%9A%84%E5%A4%9A%E5%B1%82%E6%84%9F%E7%9F%A5%E5%99%A8%EF%BC%88Muti-Perceptron%EF%BC%89%E9%80%9A%E8%BF%87%E8%8A%B1%E7%93%A3%E4%BB%A5%E5%8F%8A%E8%8A%B1%E8%90%BC%E7%9A%84%E9%95%BF%E5%AE%BD%E5%8C%BA%E5%88%86%E5%8F%98%E8%89%B2%E9%B8%A2%E5%B0%BE%EF%BC%8C%E5%B1%B1%E9%B8%A2%E5%B0%BE%EF%BC%8C%E4%BB%A5%E5%8F%8A%E7%BB%B4%E5%90%89%E5%B0%BC%E4%BA%9A%E9%B8%A2%E5%B0%BE%EF%BC%88%E4%B8%80%EF%BC%89%E4%BA%8C%E7%BB%B4%E6%84%9F%E7%9F%A5%E5%99%A8/">使用简单的多层感知器（Muti-Perceptron）通过花瓣以及花萼的长宽区分鸢尾花类型（一）二维感知器</a></p></div><div class="news_pl"><div id="comment_container"></div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.css">
+
+<script src="https://cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js"></script>
+
+<script src="/js/md5.min.js"></script>
+<script>const gitalk = new Gitalk({
+    clientID: 'd07f1f6716764ca4067c',
+    clientSecret: '048c64f29b2fa6546065f4f464951b10544d84ea',
+    repo: 'bawanag.github.io',
+    owner: 'bawanag',
+    admin: ['bawanag'],
+    id: md5("2020/03/02/使用简单的多层感知器（Muti-Perceptron）通过花瓣以及花萼的长宽区分变色鸢尾，山鸢尾，以及维吉尼亚鸢尾（二）多维感知器/"),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: true  // Facebook-like distraction free mode
+})
+gitalk.render('comment_container')</script></div></div></div></main><aside class="r_box"><div class="card box"><h2>我的名片</h2><div class="box_con"><p>Bawanag</p>
+<p>职业：AI炼丹师、全栈软件工程师、Java、算法劝退师</p>
+<p>Email：tyj8631775@outlook.com</p>
+</div></div><div class="category box"><h2>文章分类</h2><div class="box_con"><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Dissertation/">Dissertation</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Experience/">Experience</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Research/">Research</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/Tutorial/">Tutorial</a><span class="category-list-count">1</span></li></ul></div></div><div align="center" class="myphoto box"><h2> </h2><div align="center" class="box_con"><img src="/images/sss.jpg"></div></div></aside></article><footer><section class="footer_bottom"><div class="footer_container"><p class="copyright"></p><ul class="social_network"></ul></div></section></footer><div class="cd-top"><i class="iconfont icon-top"></i></div>
+<script src="/js/jquery.min.js"></script>
+<script src="/js/scrollreveal.js"></script>
+<script src="/js/hc-sticky.js"></script>
+<script src="/js/canvas-nest.js" type="text/javascript" color="47,135,193" opacity="0.7" zIndex="-2" count="199"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/highlight.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/java.min.js"></script><script src="https://cdn.bootcss.com/highlight.js/9.15.9/languages/javascript.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script src="/js/common.js?v=202102071117.js"></script>
+<script src="/js/index.js?v=202102071117.js"></script>
+</body></html>
